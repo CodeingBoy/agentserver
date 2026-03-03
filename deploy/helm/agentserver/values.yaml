@@ -108,6 +108,8 @@ llmproxy:
     repository: ghcr.io/agentserver/llmproxy
     tag: latest
     pullPolicy: Always
+  # Number of llmproxy replicas (defaults to global replicaCount if not set).
+  replicaCount: 1
   # LLM proxy listens on this port inside the container.
   port: 8081
   # LLM proxy uses the same PostgreSQL instance by default (separate database "llmproxy").

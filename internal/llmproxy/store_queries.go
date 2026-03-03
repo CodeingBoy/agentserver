@@ -37,12 +37,12 @@ func (s *Store) RecordUsage(u TokenUsage) error {
 	_, err := s.db.Exec(
 		`INSERT INTO usage (id, trace_id, sandbox_id, workspace_id, provider, model, message_id,
 			input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
-			streaming, duration_ms, ttft_ms, created_at)
+			streaming, duration, ttft, created_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
 		u.ID, nullIfEmpty(u.TraceID), u.SandboxID, u.WorkspaceID, u.Provider, u.Model,
 		nullIfEmpty(u.MessageID), u.InputTokens, u.OutputTokens,
 		u.CacheCreationInputTokens, u.CacheReadInputTokens,
-		u.Streaming, u.DurationMs, u.TTFTMs, u.CreatedAt,
+		u.Streaming, u.Duration, u.TTFT, u.CreatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("record usage: %w", err)
@@ -187,7 +187,7 @@ func (s *Store) GetTraceDetail(traceID string) (*Trace, []TokenUsage, error) {
 		`SELECT id, COALESCE(trace_id, ''), sandbox_id, workspace_id, provider, model,
 			COALESCE(message_id, ''), input_tokens, output_tokens,
 			cache_creation_input_tokens, cache_read_input_tokens,
-			streaming, duration_ms, ttft_ms, created_at
+			streaming, duration, ttft, created_at
 		 FROM usage WHERE trace_id = $1 ORDER BY created_at ASC`,
 		traceID,
 	)
@@ -202,7 +202,7 @@ func (s *Store) GetTraceDetail(traceID string) (*Trace, []TokenUsage, error) {
 		if err := rows.Scan(&u.ID, &u.TraceID, &u.SandboxID, &u.WorkspaceID,
 			&u.Provider, &u.Model, &u.MessageID, &u.InputTokens, &u.OutputTokens,
 			&u.CacheCreationInputTokens, &u.CacheReadInputTokens,
-			&u.Streaming, &u.DurationMs, &u.TTFTMs, &u.CreatedAt); err != nil {
+			&u.Streaming, &u.Duration, &u.TTFT, &u.CreatedAt); err != nil {
 			return nil, nil, fmt.Errorf("scan usage: %w", err)
 		}
 		usages = append(usages, u)

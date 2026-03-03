@@ -146,9 +146,6 @@ func (s *Server) Router() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// Anthropic API proxy for sandboxes (auth via proxy token in x-api-key header).
-	r.HandleFunc("/proxy/anthropic/*", s.handleAnthropicProxy)
-
 	// Internal API for LLM proxy token validation (no cookie auth).
 	r.Post("/internal/validate-proxy-token", s.handleValidateProxyToken)
 

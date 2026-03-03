@@ -143,8 +143,8 @@ func (s *Server) interceptNonStreaming(resp *http.Response, sbx *SandboxInfo, tr
 		return nil
 	}
 
-	durationMs := time.Since(startTime).Milliseconds()
-	s.recordUsage(sbx, traceID, requestID, model, msgID, usage, false, durationMs, 0, logger)
+	duration := time.Since(startTime).Milliseconds()
+	s.recordUsage(sbx, traceID, requestID, model, msgID, usage, false, duration, 0, logger)
 	return nil
 }
 
@@ -154,15 +154,15 @@ func (s *Server) interceptStreaming(resp *http.Response, sbx *SandboxInfo, trace
 		return nil
 	}
 
-	resp.Body = newStreamInterceptor(resp.Body, startTime, func(model, msgID string, usage anthropic.Usage, ttftMs int64) {
-		durationMs := time.Since(startTime).Milliseconds()
-		s.recordUsage(sbx, traceID, requestID, model, msgID, usage, true, durationMs, ttftMs, logger)
+	resp.Body = newStreamInterceptor(resp.Body, startTime, func(model, msgID string, usage anthropic.Usage, ttft int64) {
+		duration := time.Since(startTime).Milliseconds()
+		s.recordUsage(sbx, traceID, requestID, model, msgID, usage, true, duration, ttft, logger)
 	})
 	return nil
 }
 
 // recordUsage persists a usage record and logs it.
-func (s *Server) recordUsage(sbx *SandboxInfo, traceID, requestID, model, msgID string, usage anthropic.Usage, streaming bool, durationMs, ttftMs int64, logger *slog.Logger) {
+func (s *Server) recordUsage(sbx *SandboxInfo, traceID, requestID, model, msgID string, usage anthropic.Usage, streaming bool, duration, ttft int64, logger *slog.Logger) {
 	logger.Info("anthropic request completed",
 		"model", model,
 		"message_id", msgID,
@@ -171,8 +171,8 @@ func (s *Server) recordUsage(sbx *SandboxInfo, traceID, requestID, model, msgID 
 		"cache_creation_input_tokens", usage.CacheCreationInputTokens,
 		"cache_read_input_tokens", usage.CacheReadInputTokens,
 		"streaming", streaming,
-		"duration_ms", durationMs,
-		"ttft_ms", ttftMs,
+		"duration", duration,
+		"ttft", ttft,
 	)
 
 	if s.store == nil {
@@ -192,8 +192,8 @@ func (s *Server) recordUsage(sbx *SandboxInfo, traceID, requestID, model, msgID 
 		CacheCreationInputTokens: usage.CacheCreationInputTokens,
 		CacheReadInputTokens:     usage.CacheReadInputTokens,
 		Streaming:                streaming,
-		DurationMs:               durationMs,
-		TTFTMs:                   ttftMs,
+		Duration:                 duration,
+		TTFT:                     ttft,
 		CreatedAt:                time.Now(),
 	}
 

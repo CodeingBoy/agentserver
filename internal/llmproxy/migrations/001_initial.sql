@@ -26,8 +26,8 @@ CREATE TABLE usage (
     cache_creation_input_tokens BIGINT NOT NULL DEFAULT 0,
     cache_read_input_tokens     BIGINT NOT NULL DEFAULT 0,
     streaming                   BOOLEAN NOT NULL DEFAULT FALSE,
-    duration_ms                 BIGINT NOT NULL DEFAULT 0,
-    ttft_ms                     BIGINT NOT NULL DEFAULT 0,
+    duration                    BIGINT NOT NULL DEFAULT 0,
+    ttft                        BIGINT NOT NULL DEFAULT 0,
     created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_usage_trace_id ON usage(trace_id);

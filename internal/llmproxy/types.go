@@ -33,8 +33,8 @@ type TokenUsage struct {
 	CacheCreationInputTokens int64     `json:"cacheCreationInputTokens"`
 	CacheReadInputTokens     int64     `json:"cacheReadInputTokens"`
 	Streaming                bool      `json:"streaming"`
-	DurationMs               int64     `json:"durationMs"`
-	TTFTMs                   int64     `json:"ttftMs"`
+	Duration                 int64     `json:"duration"`
+	TTFT                     int64     `json:"ttft"`
 	CreatedAt                time.Time `json:"createdAt"`
 }
 

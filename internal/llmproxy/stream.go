@@ -17,9 +17,9 @@ type streamInterceptor struct {
 	model      string
 	msgID      string
 	usage      anthropic.Usage // accumulator
-	ttftMs     int64           // time to first token (ms)
+	ttft       int64           // time to first token (ms)
 	gotFirst   bool            // whether first content token was seen
-	onComplete func(model, msgID string, usage anthropic.Usage, ttftMs int64)
+	onComplete func(model, msgID string, usage anthropic.Usage, ttft int64)
 	completed  bool
 }
 
@@ -97,7 +97,7 @@ func (si *streamInterceptor) parseLine(line []byte) {
 	// Track TTFT: the first content_block_delta carries the first output token.
 	if !si.gotFirst && eventType == "content_block_delta" {
 		si.gotFirst = true
-		si.ttftMs = time.Since(si.startTime).Milliseconds()
+		si.ttft = time.Since(si.startTime).Milliseconds()
 	}
 
 	if hasUsage {
@@ -120,6 +120,6 @@ func (si *streamInterceptor) finish() {
 	}
 	si.completed = true
 	if si.onComplete != nil {
-		si.onComplete(si.model, si.msgID, si.usage, si.ttftMs)
+		si.onComplete(si.model, si.msgID, si.usage, si.ttft)
 	}
 }
