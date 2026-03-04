@@ -4,7 +4,6 @@ import {
   Users,
   LayoutDashboard,
   Box,
-  Layers,
   UserPlus,
   Trash2,
   X,
@@ -13,7 +12,6 @@ import {
   listMembers,
   addMember,
   removeMember,
-  getWorkspacesQuota,
   getWorkspaceDefaults,
   type Workspace,
   type WorkspaceMember,
@@ -30,19 +28,16 @@ interface WorkspaceDetailProps {
 export function WorkspaceDetail({ workspace }: WorkspaceDetailProps) {
   const [tab, setTab] = useState<Tab>('overview')
   const [members, setMembers] = useState<WorkspaceMember[]>([])
-  const [wsQuota, setWsQuota] = useState<{ current: number; max: number } | null>(null)
   const [sbxQuota, setSbxQuota] = useState<{ current: number; max: number } | null>(null)
   const [defaults, setDefaults] = useState<WorkspaceSandboxDefaults | null>(null)
 
   useEffect(() => {
     setTab('overview')
     setMembers([])
-    setWsQuota(null)
     setSbxQuota(null)
     setDefaults(null)
 
     listMembers(workspace.id).then(setMembers).catch(() => {})
-    getWorkspacesQuota().then(setWsQuota).catch(() => {})
     getWorkspaceDefaults(workspace.id).then((d) => {
       setDefaults(d)
       setSbxQuota({ current: d.currentSandboxes, max: d.maxSandboxes })
@@ -92,7 +87,6 @@ export function WorkspaceDetail({ workspace }: WorkspaceDetailProps) {
         {tab === 'overview' && (
           <OverviewTab
             workspace={workspace}
-            wsQuota={wsQuota}
             sbxQuota={sbxQuota}
             defaults={defaults}
           />
@@ -109,9 +103,8 @@ export function WorkspaceDetail({ workspace }: WorkspaceDetailProps) {
   )
 }
 
-function OverviewTab({ workspace, wsQuota, sbxQuota, defaults }: {
+function OverviewTab({ workspace, sbxQuota, defaults }: {
   workspace: Workspace
-  wsQuota: { current: number; max: number } | null
   sbxQuota: { current: number; max: number } | null
   defaults: WorkspaceSandboxDefaults | null
 }) {
@@ -120,13 +113,6 @@ function OverviewTab({ workspace, wsQuota, sbxQuota, defaults }: {
       {/* Info cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <InfoCard icon={<Clock size={14} />} label="Created" value={new Date(workspace.createdAt).toLocaleString()} />
-        {wsQuota && (
-          <InfoCard
-            icon={<Layers size={14} />}
-            label="Workspaces"
-            value={`${wsQuota.current} / ${wsQuota.max === 0 ? '\u221E' : wsQuota.max}`}
-          />
-        )}
         {sbxQuota && (
           <InfoCard
             icon={<Box size={14} />}

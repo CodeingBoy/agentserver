@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, Pause, Play, Loader2, LogOut, ChevronDown, Sun, Moon, Monitor, Settings, Laptop, Shield } from 'lucide-react'
+import { Plus, Trash2, Pause, Play, Loader2, LogOut, ChevronDown, Sun, Moon, Monitor, Settings, Laptop, Shield, FolderOpen, Box } from 'lucide-react'
 import {
   type Workspace,
   type Sandbox,
@@ -288,8 +288,11 @@ export function SandboxList({
           onClick={() => setWsDropdownOpen((v) => !v)}
           className="flex w-full items-center justify-between px-3 py-3 text-sm font-medium hover:bg-[var(--secondary)]"
         >
-          <span className="truncate">{selectedWorkspace?.name || 'Select workspace'}</span>
-          <ChevronDown size={14} className={`transition-transform ${wsDropdownOpen ? 'rotate-180' : ''}`} />
+          <div className="flex items-center gap-2 min-w-0">
+            <FolderOpen size={14} className="shrink-0 text-[var(--muted-foreground)]" />
+            <span className="truncate">{selectedWorkspace?.name || 'Select workspace'}</span>
+          </div>
+          <ChevronDown size={14} className={`shrink-0 transition-transform ${wsDropdownOpen ? 'rotate-180' : ''}`} />
         </button>
         {wsDropdownOpen && (
           <div className="absolute left-0 right-0 top-full z-10 border border-[var(--border)] bg-[var(--card)] shadow-lg">
@@ -304,7 +307,10 @@ export function SandboxList({
                   selectedWorkspaceId === ws.id ? 'bg-[var(--secondary)]' : ''
                 }`}
               >
-                <span className="truncate">{ws.name}</span>
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <FolderOpen size={13} className="shrink-0 text-[var(--muted-foreground)]" />
+                  <span className="truncate">{ws.name}</span>
+                </div>
                 <button
                   onClick={(e) => handleDeleteWorkspace(ws.id, e)}
                   className="hidden rounded p-1 hover:bg-[var(--destructive)] hover:text-white group-hover:block"
@@ -325,9 +331,23 @@ export function SandboxList({
         )}
       </div>
 
+      {/* Workspace detail link */}
+      {selectedWorkspaceId && onShowWorkspaceDetail && (
+        <button
+          onClick={onShowWorkspaceDetail}
+          className="flex w-full items-center gap-2 border-b border-[var(--border)] px-3 py-2 text-sm text-[var(--muted-foreground)] hover:bg-[var(--secondary)]"
+        >
+          <Settings size={14} />
+          Workspace Settings
+        </button>
+      )}
+
       {/* Sandbox header */}
       <div className="flex items-center justify-between border-b border-[var(--border)] p-3">
-        <span className="text-sm font-medium">Sandboxes</span>
+        <div className="flex items-center gap-1.5">
+          <Box size={14} className="text-[var(--muted-foreground)]" />
+          <span className="text-sm font-medium">Sandboxes</span>
+        </div>
         <div className="flex gap-1">
           <button
             onClick={async () => {
@@ -434,17 +454,6 @@ export function SandboxList({
           </div>
         )}
       </div>
-
-      {/* Workspace detail */}
-      {selectedWorkspaceId && onShowWorkspaceDetail && (
-        <button
-          onClick={onShowWorkspaceDetail}
-          className="flex w-full items-center gap-2 border-t border-[var(--border)] px-3 py-2 text-sm text-[var(--muted-foreground)] hover:bg-[var(--secondary)]"
-        >
-          <Settings size={14} />
-          Workspace Details
-        </button>
-      )}
 
       {/* User profile */}
       <div className="relative border-t border-[var(--border)]" ref={menuRef}>
