@@ -47,7 +47,7 @@ Browser ──▶ agentserver (Go) ──▶ sandbox pod / container
                ├─ Anthropic API proxy (injects real API key)
                │
                │               WebSocket tunnel
-Local machine ─┼──▶ agentserver agent connect ──────────▶ agentserver
+Local machine ─┼──▶ agentserver connect ──────────────▶ agentserver
                └─ opencode serve (:4096)                    │
                                                     Browser access via
                                                     subdomain proxy
@@ -87,14 +87,13 @@ Connect a locally-running opencode instance to agentserver — no public IP or t
 
 ```bash
 # Register with the code
-agentserver agent connect \
+agentserver connect \
   --server https://cli.example.com \
   --code <registration-code> \
-  --name "My MacBook" \
-  --opencode-url http://localhost:4096
+  --name "My MacBook"
 
 # Subsequent runs auto-reconnect using saved credentials
-agentserver agent connect --opencode-url http://localhost:4096
+agentserver connect
 ```
 
 3. A **local** sandbox appears in the Web UI — click "Open" to access your local opencode through the browser.
