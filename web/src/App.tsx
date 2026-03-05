@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import {
   checkAuth,
@@ -27,16 +28,44 @@ export interface UserInfo {
   role: string
 }
 
+function SandboxDetailRoute({
+  sandboxes,
+  onPause,
+  onResume,
+  onDelete,
+}: {
+  sandboxes: Sandbox[]
+  onPause: (id: string) => void
+  onResume: (id: string) => void
+  onDelete: (id: string) => void
+}) {
+  const { id } = useParams<{ id: string }>()
+  const sandbox = sandboxes.find((s) => s.id === id)
+  if (!sandbox) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <span className="text-[var(--muted-foreground)]">Sandbox not found</span>
+      </div>
+    )
+  }
+  return (
+    <SandboxDetail
+      sandbox={sandbox}
+      onPause={onPause}
+      onResume={onResume}
+      onDelete={onDelete}
+    />
+  )
+}
+
 export default function App() {
+  const navigate = useNavigate()
   const [authed, setAuthed] = useState<boolean | null>(null)
   const [user, setUser] = useState<UserInfo | null>(null)
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null)
   const [sandboxes, setSandboxes] = useState<Sandbox[]>([])
-  const [activeSandboxId, setActiveSandboxId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
-  const [showAdmin, setShowAdmin] = useState(false)
-  const [showManageProjects, setShowManageProjects] = useState(false)
 
   const refreshSandboxes = useCallback(async () => {
     if (!selectedWorkspaceId) return
@@ -64,17 +93,15 @@ export default function App() {
   useEffect(() => {
     if (selectedWorkspaceId) {
       refreshSandboxes()
-      setActiveSandboxId(null)
     } else {
       setSandboxes([])
-      setActiveSandboxId(null)
     }
-    setShowManageProjects(false)
   }, [selectedWorkspaceId, refreshSandboxes])
 
   const handleSelectWorkspace = useCallback((id: string) => {
     setSelectedWorkspaceId(id || null)
-  }, [])
+    navigate('/')
+  }, [navigate])
 
   const handleLogout = useCallback(() => {
     setAuthed(false)
@@ -82,8 +109,8 @@ export default function App() {
     setWorkspaces([])
     setSelectedWorkspaceId(null)
     setSandboxes([])
-    setActiveSandboxId(null)
-  }, [])
+    navigate('/')
+  }, [navigate])
 
   const handlePause = useCallback(async (id: string) => {
     try {
@@ -103,27 +130,9 @@ export default function App() {
     try {
       await deleteSandbox(id)
       setSandboxes((prev) => prev.filter((s) => s.id !== id))
-      if (activeSandboxId === id) setActiveSandboxId(null)
+      navigate('/')
     } catch { /* ignore */ }
-  }, [activeSandboxId])
-
-  const handleSelectSandbox = useCallback((id: string) => {
-    setActiveSandboxId(id)
-    setShowManageProjects(false)
-    setShowAdmin(false)
-  }, [])
-
-  const handleShowManageProjects = useCallback(() => {
-    setShowManageProjects(true)
-    setActiveSandboxId(null)
-    setShowAdmin(false)
-  }, [])
-
-  const handleShowAdmin = useCallback(() => {
-    setShowAdmin(true)
-    setActiveSandboxId(null)
-    setShowManageProjects(false)
-  }, [])
+  }, [navigate])
 
   if (authed === null) {
     return (
@@ -148,42 +157,16 @@ export default function App() {
     )
   }
 
-  const activeSandboxData = sandboxes.find((s) => s.id === activeSandboxId)
-
-  let mainContent
-  if (showAdmin) {
-    mainContent = <AdminPanel onBack={() => setShowAdmin(false)} />
-  } else if (creating) {
-    mainContent = (
-      <div className="flex flex-col items-center justify-center gap-3 h-full">
-        <Loader2 size={24} className="animate-spin text-[var(--muted-foreground)]" />
-        <span className="text-[var(--muted-foreground)]">Creating sandbox...</span>
-      </div>
-    )
-  } else if (showManageProjects) {
-    mainContent = (
-      <ManageProjects
-        workspaces={workspaces}
-        selectedWorkspaceId={selectedWorkspaceId}
-        onSelectWorkspace={handleSelectWorkspace}
-      />
-    )
-  } else if (activeSandboxId && activeSandboxData) {
-    mainContent = (
-      <SandboxDetail
-        sandbox={activeSandboxData}
-        onPause={handlePause}
-        onResume={handleResume}
-        onDelete={handleDelete}
-      />
-    )
-  } else {
-    mainContent = (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-[var(--muted-foreground)]">Select or create a sandbox</span>
-      </div>
-    )
-  }
+  const defaultContent = creating ? (
+    <div className="flex flex-col items-center justify-center gap-3 h-full">
+      <Loader2 size={24} className="animate-spin text-[var(--muted-foreground)]" />
+      <span className="text-[var(--muted-foreground)]">Creating sandbox...</span>
+    </div>
+  ) : (
+    <div className="flex items-center justify-center h-full">
+      <span className="text-[var(--muted-foreground)]">Select or create a sandbox</span>
+    </div>
+  )
 
   return (
     <div className="flex flex-col h-screen">
@@ -194,22 +177,48 @@ export default function App() {
         onSelectWorkspace={handleSelectWorkspace}
         user={user}
         onLogout={handleLogout}
-        onShowAdmin={user?.role === 'admin' ? handleShowAdmin : undefined}
-        onShowManageProjects={handleShowManageProjects}
+        onShowAdmin={user?.role === 'admin' ? () => navigate('/admin') : undefined}
+        onShowManageProjects={() => navigate('/projects')}
       />
       <div className="flex flex-1 min-h-0">
         <SandboxList
           selectedWorkspaceId={selectedWorkspaceId}
           sandboxes={sandboxes}
           setSandboxes={setSandboxes}
-          activeSandboxId={activeSandboxId}
-          onSelectSandbox={handleSelectSandbox}
           onRefreshSandboxes={refreshSandboxes}
           creating={creating}
           setCreating={setCreating}
         />
         <div className="flex flex-1 flex-col bg-[var(--background)]">
-          {mainContent}
+          <Routes>
+            <Route path="/" element={defaultContent} />
+            <Route
+              path="/sandboxes/:id"
+              element={
+                <SandboxDetailRoute
+                  sandboxes={sandboxes}
+                  onPause={handlePause}
+                  onResume={handleResume}
+                  onDelete={handleDelete}
+                />
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ManageProjects
+                  workspaces={workspaces}
+                  selectedWorkspaceId={selectedWorkspaceId}
+                  onSelectWorkspace={handleSelectWorkspace}
+                />
+              }
+            />
+            <Route
+              path="/admin"
+              element={<AdminPanel onBack={() => navigate('/')} />}
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Plus, Trash2, Pause, Play, Loader2, Laptop, Box } from 'lucide-react'
 import {
   type Sandbox,
@@ -15,8 +16,6 @@ interface SandboxListProps {
   selectedWorkspaceId: string | null
   sandboxes: Sandbox[]
   setSandboxes: React.Dispatch<React.SetStateAction<Sandbox[]>>
-  activeSandboxId: string | null
-  onSelectSandbox: (id: string) => void
   onRefreshSandboxes: () => void
   creating: boolean
   setCreating: (v: boolean) => void
@@ -43,12 +42,14 @@ export function SandboxList({
   selectedWorkspaceId,
   sandboxes,
   setSandboxes,
-  activeSandboxId,
-  onSelectSandbox,
   onRefreshSandboxes,
   creating,
   setCreating,
 }: SandboxListProps) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const sandboxMatch = location.pathname.match(/^\/sandboxes\/(.+)$/)
+  const activeSandboxId = sandboxMatch?.[1] ?? null
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
@@ -90,11 +91,11 @@ export function SandboxList({
     setCreating(true)
     setShowCreateModal(false)
     setQuotaError(null)
-    onSelectSandbox('')
+    navigate('/')
     try {
       const sbx = await createSandbox(selectedWorkspaceId, name, type, cpu, memory, idleTimeout)
       setSandboxes((prev) => [...prev, sbx])
-      onSelectSandbox(sbx.id)
+      navigate(`/sandboxes/${sbx.id}`)
     } catch (err: unknown) {
       const qe = err as { error?: string; message?: string } | undefined
       if ((qe?.error === 'quota_exceeded' || qe?.error === 'resource_budget_exceeded') && qe.message) {
@@ -117,7 +118,7 @@ export function SandboxList({
       await deleteSandbox(id)
       setSandboxes((prev) => prev.filter((s) => s.id !== id))
       if (activeSandboxId === id) {
-        onSelectSandbox('')
+        navigate('/')
       }
     } catch {
       // ignore
@@ -208,7 +209,7 @@ export function SandboxList({
         {sandboxes.map((sbx) => (
           <div
             key={sbx.id}
-            onClick={() => onSelectSandbox(sbx.id)}
+            onClick={() => navigate(`/sandboxes/${sbx.id}`)}
             className={`group flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--secondary)] ${
               activeSandboxId === sbx.id ? 'bg-[var(--secondary)]' : ''
             }`}
