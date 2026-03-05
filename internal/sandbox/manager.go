@@ -428,7 +428,7 @@ mkdir -p /mnt/session-data/projects
 	workingDir := "/home/agent/projects"
 	switch opts.SandboxType {
 	case "openclaw":
-		workingDir = "/home/agent"
+		workingDir = "/app"
 	}
 
 	mainContainer := corev1.Container{
