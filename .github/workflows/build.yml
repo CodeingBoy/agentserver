@@ -153,54 +153,29 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: true
 
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - uses: oven-sh/setup-bun@v2
-
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Build admin frontend
-        run: cd web && pnpm install --frozen-lockfile && pnpm build
-
-      - name: Build opencode frontend
-        run: cd opencode && bun install --frozen-lockfile && bun run --filter=@opencode-ai/app build && cp -r packages/app/dist ../opencodeweb/dist
-
-      - name: Cross-compile binaries
+      - name: Cross-compile agent client binary
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
           mkdir -p dist
           for PAIR in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
             OS=${PAIR%%/*}
             ARCH=${PAIR##*/}
             OUT=dist/agentserver-${OS}-${ARCH}
             [ "$OS" = "windows" ] && OUT="${OUT}.exe"
-            echo "Building agentserver ${OS}/${ARCH}..."
-            CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH go build -o "$OUT" .
-          done
-          for PAIR in linux/amd64 linux/arm64; do
-            OS=${PAIR%%/*}
-            ARCH=${PAIR##*/}
-            OUT=dist/llmproxy-${OS}-${ARCH}
-            echo "Building llmproxy ${OS}/${ARCH}..."
-            CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH go build -o "$OUT" ./cmd/llmproxy
+            echo "Building agentserver agent client ${OS}/${ARCH}..."
+            CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH go build -ldflags="-s -w" -o "$OUT" ./cmd/agentserver-agent
           done
 
       - name: Generate checksums
-        run: cd dist && sha256sum agentserver-* llmproxy-* > checksums.txt
+        run: cd dist && sha256sum agentserver-* > checksums.txt
 
       - name: Generate changelog
         id: changelog
         run: |
-          # Get the previous tag
           PREV_TAG=$(git tag --sort=-version:refname | head -n 2 | tail -n 1)
           if [ -z "$PREV_TAG" ]; then
             COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" HEAD)
@@ -210,6 +185,14 @@ jobs:
           TAG=${GITHUB_REF#refs/tags/}
           {
             echo "body<<CHANGELOG_EOF"
+            echo "## Agent Client"
+            echo ""
+            echo "Download the \`agentserver\` binary for your platform below to connect a local opencode instance:"
+            echo ""
+            echo "\`\`\`bash"
+            echo "agentserver connect --server https://your-server --code <registration-code>"
+            echo "\`\`\`"
+            echo ""
             echo "## Docker Images"
             echo ""
             echo "\`\`\`"
@@ -224,14 +207,6 @@ jobs:
             echo "helm install agentserver oci://ghcr.io/agentserver/charts/agentserver --version ${TAG#v}"
             echo "\`\`\`"
             echo ""
-            echo "## Binaries"
-            echo ""
-            echo "Download the \`agentserver\` binary for your platform below. Use it to connect a local opencode instance:"
-            echo ""
-            echo "\`\`\`bash"
-            echo "agentserver agent connect --server https://your-server --code <registration-code> --opencode-url http://localhost:4096"
-            echo "\`\`\`"
-            echo ""
             echo "## Changes"
             echo ""
             echo "$COMMITS"
@@ -244,5 +219,4 @@ jobs:
           generate_release_notes: false
           files: |
             dist/agentserver-*
-            dist/llmproxy-*
             dist/checksums.txt
