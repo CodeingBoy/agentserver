@@ -17,6 +17,9 @@ import {
   Copy,
   Check,
   Pencil,
+  Laptop,
+  HardDrive,
+  Server,
 } from 'lucide-react'
 import {
   getSandboxUsage,
@@ -24,6 +27,7 @@ import {
   getTraceDetail,
   renameSandbox,
   type Sandbox,
+  type AgentInfo,
   type UsageSummary,
   type TraceItem,
   type TokenUsageItem,
@@ -45,6 +49,14 @@ export const TRACES_PER_PAGE = 20
 
 function formatTokens(n: number): string {
   return n.toLocaleString()
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
 function StatusBadge({ status, isLocal }: { status: string; isLocal: boolean }) {
@@ -295,6 +307,55 @@ export function SandboxDetail({ sandbox, onPause, onResume, onDelete, onRename }
   )
 }
 
+function AgentInfoSection({ info }: { info: AgentInfo }) {
+  const items = [
+    { icon: <Server size={14} />, label: 'Hostname', value: info.hostname },
+    { icon: <Laptop size={14} />, label: 'OS', value: `${info.platform} ${info.platform_version}` },
+    { icon: <Cpu size={14} />, label: 'Arch', value: info.kernel_arch },
+    { icon: <Cpu size={14} />, label: 'CPU', value: info.cpu_model_name ? `${info.cpu_model_name} (${info.cpu_count_logical} cores)` : `${info.cpu_count_logical} cores` },
+    { icon: <MemoryStick size={14} />, label: 'Memory', value: formatBytes(info.memory_total) },
+    { icon: <HardDrive size={14} />, label: 'Disk', value: `${formatBytes(info.disk_free)} free / ${formatBytes(info.disk_total)}` },
+  ]
+  const versionItems = [
+    { label: 'Agent', value: info.agent_version || 'Unknown' },
+    { label: 'opencode', value: info.opencode_version || 'Unknown' },
+  ]
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3">
+        <div className="flex items-center gap-2">
+          <Laptop size={14} className="text-emerald-400" />
+          <span className="text-sm font-medium text-[var(--foreground)]">Agent Info</span>
+        </div>
+        <span className="text-[10px] text-[var(--muted-foreground)]">
+          Updated {new Date(info.updated_at).toLocaleString()}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3">
+        {items.map(({ icon, label, value }) => (
+          <div key={label}>
+            <div className="flex items-center gap-1.5 text-[var(--muted-foreground)] mb-1">
+              {icon}
+              <span className="text-xs">{label}</span>
+            </div>
+            <div className="text-sm font-medium text-[var(--foreground)] truncate" title={value}>{value}</div>
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-[var(--border)] px-5 py-3">
+        <div className="flex items-center gap-6">
+          {versionItems.map(({ label, value }) => (
+            <div key={label} className="flex items-center gap-2 text-xs">
+              <span className="text-[var(--muted-foreground)]">{label}</span>
+              <span className="font-mono text-[var(--foreground)]">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OverviewTab({ sandbox, usageData, totals }: {
   sandbox: Sandbox
   usageData: UsageSummary[] | null
@@ -350,6 +411,11 @@ function OverviewTab({ sandbox, usageData, totals }: {
           <InfoCard icon={<MemoryStick size={14} />} label="Memory" value={`${Math.round(sandbox.memory / (1024 * 1024))} MB`} />
         ) : null}
       </div>
+
+      {/* Agent Info (local sandboxes) */}
+      {sandbox.is_local && sandbox.agent_info && (
+        <AgentInfoSection info={sandbox.agent_info} />
+      )}
 
       {/* Usage */}
       {usageData && usageData.length > 0 && (

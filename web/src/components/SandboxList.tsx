@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Plus, Trash2, Pause, Play, Loader2, Laptop, Box, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, Pause, Play, Loader2, Laptop, Box } from 'lucide-react'
 import {
   type Sandbox,
-  type AgentInfo,
   createSandbox,
   deleteSandbox,
   pauseSandbox,
@@ -12,42 +11,6 @@ import {
 } from '../lib/api'
 import { CreateSandboxModal } from './CreateSandboxModal'
 import { ConfirmModal } from './Modals'
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
-
-function AgentInfoPanel({ info }: { info: AgentInfo }) {
-  const items = [
-    { label: 'OS', value: `${info.platform} ${info.platform_version}` },
-    { label: 'Arch', value: info.kernel_arch },
-    { label: 'Host', value: info.hostname },
-    { label: 'CPU', value: info.cpu_model_name ? `${info.cpu_model_name} (${info.cpu_count_logical} cores)` : `${info.cpu_count_logical} cores` },
-    { label: 'Memory', value: formatBytes(info.memory_total) },
-    { label: 'Disk', value: `${formatBytes(info.disk_free)} free / ${formatBytes(info.disk_total)}` },
-    { label: 'Agent', value: info.agent_version || 'Unknown' },
-    { label: 'opencode', value: info.opencode_version || 'Unknown' },
-  ]
-  return (
-    <div className="border-t border-[var(--border)] bg-[var(--card)] px-3 py-2">
-      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
-        {items.map(({ label, value }) => (
-          <div key={label} className="contents">
-            <span className="text-[var(--muted-foreground)]">{label}</span>
-            <span className="truncate text-[var(--foreground)]" title={value}>{value}</span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-1.5 text-[10px] text-[var(--muted-foreground)]">
-        Updated {new Date(info.updated_at).toLocaleString()}
-      </div>
-    </div>
-  )
-}
 
 interface SandboxListProps {
   selectedWorkspaceId: string | null
@@ -93,7 +56,6 @@ export function SandboxList({
   const [confirmPause, setConfirmPause] = useState<{ id: string; name: string } | null>(null)
   const [agentCodeData, setAgentCodeData] = useState<{ code: string; expires_at: string; command: string } | null>(null)
   const [quotaError, setQuotaError] = useState<string | null>(null)
-  const [expandedSandboxId, setExpandedSandboxId] = useState<string | null>(null)
 
   // Poll when any sandbox is in a transitional state.
   useEffect(() => {
@@ -193,11 +155,6 @@ export function SandboxList({
     }
   }
 
-  const toggleExpand = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setExpandedSandboxId((prev) => (prev === id ? null : id))
-  }
-
   return (
     <div className="flex h-full w-60 flex-col border-r border-[var(--border)] bg-[var(--muted)]">
       {/* Sandbox header */}
@@ -258,14 +215,6 @@ export function SandboxList({
               }`}
             >
               <StatusDot status={sbx.status} />
-              {sbx.is_local && sbx.agent_info && (
-                <button
-                  onClick={(e) => toggleExpand(sbx.id, e)}
-                  className="-ml-1 shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                >
-                  {expandedSandboxId === sbx.id ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                </button>
-              )}
               <span className="flex-1 truncate">{sbx.name}</span>
               {sbx.is_local ? (
                 <span className="shrink-0 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
@@ -308,9 +257,6 @@ export function SandboxList({
                 </button>
               </div>
             </div>
-            {sbx.is_local && sbx.agent_info && expandedSandboxId === sbx.id && (
-              <AgentInfoPanel info={sbx.agent_info} />
-            )}
           </div>
         ))}
         {sandboxes.length === 0 && !creating && selectedWorkspaceId && (
