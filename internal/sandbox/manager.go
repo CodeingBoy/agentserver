@@ -34,7 +34,7 @@ const (
 	sandboxNameHashLabel = "agents.x-k8s.io/sandbox-name-hash"
 	sandboxContainerName = "agent"
 	pollInterval         = 2 * time.Second
-	pollTimeout          = 5 * time.Minute
+	pollTimeout          = 15 * time.Minute
 )
 
 // Compile-time interface check.
@@ -180,7 +180,7 @@ set -e
 # If the PVC is fresh (only has lost+found or is empty), seed it from the image's home dir.
 if [ ! -f /mnt/session-data/.initialized ]; then
   echo "Seeding session PVC from /home/agent..."
-  tar -C /home/agent -cf - . | tar -C /mnt/session-data -xf - 2>/dev/null || true
+  tar -C /home/agent -czf - . | tar -C /mnt/session-data -xzf - 2>/dev/null || true
   touch /mnt/session-data/.initialized
 fi
 chown -R 1000:1000 /mnt/session-data
