@@ -181,6 +181,7 @@ set -e
 if [ ! -f /mnt/session-data/.initialized ]; then
   echo "Seeding session PVC from /home/agent..."
   tar -C /home/agent -czf - . | tar -C /mnt/session-data -xzf - 2>/dev/null || true
+  echo "Initialization done"
   touch /mnt/session-data/.initialized
 fi
 chown -R 1000:1000 /mnt/session-data
@@ -380,7 +381,8 @@ exec node openclaw.mjs gateway --allow-unconfigured --bind lan`}
 set -e
 if [ ! -f /mnt/session-data/.initialized ]; then
   echo "Seeding session PVC from /home/agent..."
-  cp -a /home/agent/. /mnt/session-data/ 2>/dev/null || true
+  tar -C /home/agent -czf - . | tar -C /mnt/session-data -xzf - 2>/dev/null || true
+  echo "Initialization done"
   touch /mnt/session-data/.initialized
 fi
 chown -R 1000:1000 /mnt/session-data
